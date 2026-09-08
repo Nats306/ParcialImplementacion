@@ -1287,8 +1287,8 @@ Developed as part of the implementation project for the EIA racing system assign
 Team members should add their names here:
 
 ```text
-- [Student Name]
-- [Student Name]
+- Miguel Ángel Fonseca Restrepo
+- Natalia Mejía Devia
 ```
 
 ---
