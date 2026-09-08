@@ -15,7 +15,10 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException e, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(
+            ResourceNotFoundException e,
+            HttpServletRequest request
+    ) {
         ErrorResponse err = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
@@ -23,11 +26,15 @@ public class GlobalExceptionHandler {
                 e.getMessage(),
                 request.getRequestURI()
         );
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(err);
     }
 
     @ExceptionHandler(ConflictException.class)
-    public ResponseEntity<ErrorResponse> handleConflictException(ConflictException e, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleConflictException(
+            ConflictException e,
+            HttpServletRequest request
+    ) {
         ErrorResponse err = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.CONFLICT.value(),
@@ -35,11 +42,15 @@ public class GlobalExceptionHandler {
                 e.getMessage(),
                 request.getRequestURI()
         );
+
         return ResponseEntity.status(HttpStatus.CONFLICT).body(err);
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException e, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleBadRequestException(
+            BadRequestException e,
+            HttpServletRequest request
+    ) {
         ErrorResponse err = new ErrorResponse(
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -47,14 +58,54 @@ public class GlobalExceptionHandler {
                 e.getMessage(),
                 request.getRequestURI()
         );
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
     }
 
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessRuleException(
+            BusinessRuleException e,
+            HttpServletRequest request
+    ) {
+        ErrorResponse err = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                e.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(err);
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(
+            DuplicateResourceException e,
+            HttpServletRequest request
+    ) {
+        ErrorResponse err = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                e.getMessage(),
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(err);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(
+            MethodArgumentNotValidException e,
+            HttpServletRequest request
+    ) {
         Map<String, String> errors = new HashMap<>();
+
         e.getBindingResult().getAllErrors().forEach(error ->
-                errors.putIfAbsent(error.getDefaultMessage(), error.getDefaultMessage())
+                errors.putIfAbsent(
+                        error.getDefaultMessage(),
+                        error.getDefaultMessage()
+                )
         );
 
         ErrorResponse err = new ErrorResponse(
@@ -65,6 +116,7 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(),
                 errors
         );
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
     }
 }

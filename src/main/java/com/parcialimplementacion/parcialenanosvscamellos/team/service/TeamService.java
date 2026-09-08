@@ -109,7 +109,7 @@ public class TeamService {
         validateCompetitorCanJoinTeam(team, competitor);
         validateTeamCapacity(team);
 
-        competitor.setTeam(team);
+        team.addMember(competitor);
         competitorRepository.save(competitor);
 
         return TeamMapper.toResponse(team);
@@ -128,7 +128,7 @@ public class TeamService {
             );
         }
 
-        competitor.setTeam(null);
+        team.removeMember(competitor);
         competitorRepository.save(competitor);
     }
 

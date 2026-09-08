@@ -10,7 +10,9 @@ public class CompetitorMapper {
 
     public static Competitor toEntity(CompetitorRequest request) {
         if (request == null) return null;
-        return Competitor.builder().name(request.name())
+
+        return Competitor.builder()
+                .name(request.name())
                 .nickname(request.nickname())
                 .competitorType(request.competitorType())
                 .age(request.age())
@@ -23,8 +25,9 @@ public class CompetitorMapper {
 
     public static CompetitorResponse toResponse(Competitor competitor) {
         if (competitor == null) return null;
+
         return new CompetitorResponse(
-          competitor.getId(),
+                competitor.getId(),
                 competitor.getName(),
                 competitor.getNickname(),
                 competitor.getCompetitorType(),
@@ -37,13 +40,13 @@ public class CompetitorMapper {
                 competitor.getVictories(),
                 competitor.getDefeats(),
                 competitor.getCompletedRaces()
-
         );
     }
 
     public static void updateEntity(Competitor competitor, CompetitorRequest request) {
         competitor.setName(request.name());
         competitor.setNickname(request.nickname());
+        competitor.setCompetitorType(request.competitorType());
         competitor.setAge(request.age());
         competitor.setWeight(request.weight());
         competitor.setHeight(request.height());
