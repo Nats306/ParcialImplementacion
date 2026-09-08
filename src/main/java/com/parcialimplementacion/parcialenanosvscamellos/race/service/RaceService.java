@@ -11,6 +11,8 @@ import com.parcialimplementacion.parcialenanosvscamellos.race.entity.RaceType;
 import com.parcialimplementacion.parcialenanosvscamellos.race.mapper.RaceMapper;
 import com.parcialimplementacion.parcialenanosvscamellos.race.repository.IRaceRepository;
 import com.parcialimplementacion.parcialenanosvscamellos.race.specification.RaceSpecification;
+import com.parcialimplementacion.parcialenanosvscamellos.registration.entity.RegistrationStatus;
+import com.parcialimplementacion.parcialenanosvscamellos.registration.repository.IRaceRegistrationRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,13 +27,19 @@ import java.util.Set;
 public class RaceService {
 
     private final IRaceRepository raceRepository;
+    private final IRaceRegistrationRepository registrationRepository;
 
-    public RaceService(IRaceRepository raceRepository) {
+    public RaceService(
+            IRaceRepository raceRepository,
+            IRaceRegistrationRepository registrationRepository
+    ) {
         this.raceRepository = raceRepository;
+        this.registrationRepository = registrationRepository;
     }
 
     @Transactional
     public RaceResponse create(RaceRequest request) {
+
         validateDates(request);
 
         Race race = RaceMapper.toEntity(request);
@@ -53,11 +61,17 @@ public class RaceService {
             String sortBy,
             String direction
     ) {
+
         Sort sort = direction.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        sort
+                );
 
         return raceRepository.findAll(
                 RaceSpecification.withFilters(
@@ -74,14 +88,23 @@ public class RaceService {
 
     @Transactional(readOnly = true)
     public RaceResponse findById(Long id) {
-        return RaceMapper.toResponse(findEntityById(id));
+
+        return RaceMapper.toResponse(
+                findEntityById(id)
+        );
     }
 
     @Transactional
-    public RaceResponse update(Long id, RaceRequest request) {
+    public RaceResponse update(
+            Long id,
+            RaceRequest request
+    ) {
+
         Race race = findEntityById(id);
 
-        if (race.getRaceStatus() == RaceStatus.COMPLETED) {
+        if (race.getRaceStatus()
+                == RaceStatus.COMPLETED) {
+
             throw new BusinessRuleException(
                     "A completed race cannot be edited"
             );
@@ -89,53 +112,127 @@ public class RaceService {
 
         validateDates(request);
 
-        RaceMapper.updateEntity(race, request);
-        Race savedRace = raceRepository.save(race);
+        RaceMapper.updateEntity(
+                race,
+                request
+        );
 
-        return RaceMapper.toResponse(savedRace);
+        Race savedRace =
+                raceRepository.save(race);
+
+        return RaceMapper.toResponse(
+                savedRace
+        );
     }
 
     @Transactional
-    public RaceResponse updateStatus(Long id, UpdateRaceStatusRequest request) {
+    public RaceResponse updateStatus(
+            Long id,
+            UpdateRaceStatusRequest request
+    ) {
+
         Race race = findEntityById(id);
 
-        validateStatusTransition(race.getRaceStatus(), request.getStatus());
+        validateStatusTransition(
+                race.getRaceStatus(),
+                request.getStatus()
+        );
 
-        race.setRaceStatus(request.getStatus());
-        Race savedRace = raceRepository.save(race);
+        if (request.getStatus()
+                == RaceStatus.IN_PROGRESS) {
 
-        return RaceMapper.toResponse(savedRace);
+            validateRaceCanStart(race);
+        }
+
+        race.setRaceStatus(
+                request.getStatus()
+        );
+
+        Race savedRace =
+                raceRepository.save(race);
+
+        return RaceMapper.toResponse(
+                savedRace
+        );
     }
 
     @Transactional
     public void delete(Long id) {
+
         Race race = findEntityById(id);
 
-        if (race.getRaceStatus() == RaceStatus.IN_PROGRESS
-                || race.getRaceStatus() == RaceStatus.COMPLETED) {
+        if (race.getRaceStatus()
+                == RaceStatus.IN_PROGRESS
+                ||
+                race.getRaceStatus()
+                        == RaceStatus.COMPLETED) {
+
             throw new BusinessRuleException(
                     "A race in progress or completed cannot be deleted"
+            );
+        }
+
+        if (registrationRepository
+                .existsByRace_Id(id)) {
+
+            throw new BusinessRuleException(
+                    "A race with registration history cannot be deleted"
             );
         }
 
         raceRepository.delete(race);
     }
 
-    private Race findEntityById(Long id) {
-        return raceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Race with ID " + id + " was not found"
-                ));
+    private void validateRaceCanStart(
+            Race race
+    ) {
+
+        long approvedParticipants =
+                registrationRepository
+                        .countByRace_IdAndStatus(
+                                race.getId(),
+                                RegistrationStatus.APPROVED
+                        );
+
+        if (approvedParticipants < 2) {
+
+            throw new BusinessRuleException(
+                    "At least two approved participants are required to start a race"
+            );
+        }
     }
 
-    private void validateDates(RaceRequest request) {
-        if (!request.getScheduledDateTime().isAfter(LocalDateTime.now())) {
+    private Race findEntityById(Long id) {
+
+        return raceRepository.findById(id)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                                "Race with ID "
+                                        + id
+                                        + " was not found"
+                        )
+                );
+    }
+
+    private void validateDates(
+            RaceRequest request
+    ) {
+
+        if (!request
+                .getScheduledDateTime()
+                .isAfter(LocalDateTime.now())) {
+
             throw new BusinessRuleException(
                     "A race cannot be scheduled in the past"
             );
         }
 
-        if (!request.getRegistrationDeadline().isBefore(request.getScheduledDateTime())) {
+        if (!request
+                .getRegistrationDeadline()
+                .isBefore(
+                        request.getScheduledDateTime()
+                )) {
+
             throw new BusinessRuleException(
                     "Registration deadline must be earlier than the race start time"
             );
@@ -146,48 +243,53 @@ public class RaceService {
             RaceStatus currentStatus,
             RaceStatus newStatus
     ) {
+
         if (currentStatus == newStatus) {
             throw new BusinessRuleException(
                     "Race already has status " + newStatus
             );
         }
 
-        if (currentStatus == RaceStatus.COMPLETED) {
-            throw new BusinessRuleException(
-                    "A completed race cannot change status"
-            );
-        }
+        Set<RaceStatus> validNextStatuses =
+                switch (currentStatus) {
 
-        if (currentStatus == RaceStatus.CANCELLED) {
-            throw new BusinessRuleException(
-                    "A cancelled race cannot change status"
-            );
-        }
+                    case DRAFT -> Set.of(
+                            RaceStatus.OPEN_FOR_REGISTRATION,
+                            RaceStatus.CANCELLED
+                    );
 
-        Set<RaceStatus> validNextStatuses = switch (currentStatus) {
-            case DRAFT -> Set.of(
-                    RaceStatus.OPEN_FOR_REGISTRATION,
-                    RaceStatus.CANCELLED
-            );
-            case OPEN_FOR_REGISTRATION -> Set.of(
-                    RaceStatus.CLOSED_FOR_REGISTRATION,
-                    RaceStatus.CANCELLED
-            );
-            case CLOSED_FOR_REGISTRATION -> Set.of(
-                    RaceStatus.IN_PROGRESS,
-                    RaceStatus.CANCELLED
-            );
-            case IN_PROGRESS -> Set.of(
-                    RaceStatus.COMPLETED,
-                    RaceStatus.CANCELLED
-            );
-            case COMPLETED, CANCELLED -> Set.of();
-        };
+                    case OPEN_FOR_REGISTRATION -> Set.of(
+                            RaceStatus.CLOSED_FOR_REGISTRATION,
+                            RaceStatus.CANCELLED
+                    );
+
+                    case CLOSED_FOR_REGISTRATION -> Set.of(
+                            RaceStatus.IN_PROGRESS,
+                            RaceStatus.CANCELLED
+                    );
+
+                    case IN_PROGRESS -> Set.of(
+                            RaceStatus.COMPLETED,
+                            RaceStatus.CANCELLED
+                    );
+
+                    case COMPLETED ->
+                            throw new BusinessRuleException(
+                                    "A completed race cannot change status"
+                            );
+
+                    case CANCELLED ->
+                            throw new BusinessRuleException(
+                                    "A cancelled race cannot change status"
+                            );
+                };
 
         if (!validNextStatuses.contains(newStatus)) {
             throw new BusinessRuleException(
                     "Invalid race status transition from "
-                            + currentStatus + " to " + newStatus
+                            + currentStatus
+                            + " to "
+                            + newStatus
             );
         }
     }
