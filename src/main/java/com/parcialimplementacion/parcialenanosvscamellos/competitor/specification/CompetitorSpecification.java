@@ -25,7 +25,7 @@ public class CompetitorSpecification {
             if(status != null) {
                 //Solo agrega los filtros si se le pasa el parámetro por el cual filtrar,
                 //por eso terminan siendo opcionales y combinables (no filtrar nada - todo, filtrar por tipo, por status, por tipo y status)
-                predicates.add(criteriaBuilder.equal(root.get("competitorStatus"), status));
+                predicates.add(criteriaBuilder.equal(root.get("currentStatus"), status));
             }
             //Combina todos los filtros que se agregaron con AND
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

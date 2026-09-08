@@ -1,5 +1,6 @@
 package com.parcialimplementacion.parcialenanosvscamellos.competitor.entity;
 
+import com.parcialimplementacion.parcialenanosvscamellos.team.entity.Team;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -7,13 +8,14 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name="competitors")
+@Table(name = "competitors")
 @Builder
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class Competitor {
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -47,7 +49,10 @@ public class Competitor {
     @Column(nullable = false)
     private LocalDate registrationDate;
 
-    //private String team;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
+
     private int victories;
     private int defeats;
     private int completedRaces;
