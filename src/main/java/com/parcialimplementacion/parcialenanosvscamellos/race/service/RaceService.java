@@ -13,6 +13,7 @@ import com.parcialimplementacion.parcialenanosvscamellos.race.repository.IRaceRe
 import com.parcialimplementacion.parcialenanosvscamellos.race.specification.RaceSpecification;
 import com.parcialimplementacion.parcialenanosvscamellos.registration.entity.RegistrationStatus;
 import com.parcialimplementacion.parcialenanosvscamellos.registration.repository.IRaceRegistrationRepository;
+import com.parcialimplementacion.parcialenanosvscamellos.result.repository.IRaceResultRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,13 +29,16 @@ public class RaceService {
 
     private final IRaceRepository raceRepository;
     private final IRaceRegistrationRepository registrationRepository;
+    private final IRaceResultRepository resultRepository;
 
     public RaceService(
             IRaceRepository raceRepository,
-            IRaceRegistrationRepository registrationRepository
+            IRaceRegistrationRepository registrationRepository,
+            IRaceResultRepository resultRepository
     ) {
         this.raceRepository = raceRepository;
         this.registrationRepository = registrationRepository;
+        this.resultRepository = resultRepository;
     }
 
     @Transactional
@@ -67,11 +71,7 @@ public class RaceService {
                 : Sort.by(sortBy).descending();
 
         Pageable pageable =
-                PageRequest.of(
-                        page,
-                        size,
-                        sort
-                );
+                PageRequest.of(page, size, sort);
 
         return raceRepository.findAll(
                 RaceSpecification.withFilters(
@@ -88,7 +88,6 @@ public class RaceService {
 
     @Transactional(readOnly = true)
     public RaceResponse findById(Long id) {
-
         return RaceMapper.toResponse(
                 findEntityById(id)
         );
@@ -140,8 +139,12 @@ public class RaceService {
 
         if (request.getStatus()
                 == RaceStatus.IN_PROGRESS) {
-
             validateRaceCanStart(race);
+        }
+
+        if (request.getStatus()
+                == RaceStatus.COMPLETED) {
+            validateRaceCanComplete(race);
         }
 
         race.setRaceStatus(
@@ -202,15 +205,31 @@ public class RaceService {
         }
     }
 
+    private void validateRaceCanComplete(
+            Race race
+    ) {
+
+        if (!resultRepository
+                .existsByRace_Id(
+                        race.getId()
+                )) {
+
+            throw new BusinessRuleException(
+                    "A race cannot be completed without official results"
+            );
+        }
+    }
+
     private Race findEntityById(Long id) {
 
         return raceRepository.findById(id)
                 .orElseThrow(
-                        () -> new ResourceNotFoundException(
-                                "Race with ID "
-                                        + id
-                                        + " was not found"
-                        )
+                        () ->
+                                new ResourceNotFoundException(
+                                        "Race with ID "
+                                                + id
+                                                + " was not found"
+                                )
                 );
     }
 
@@ -245,8 +264,10 @@ public class RaceService {
     ) {
 
         if (currentStatus == newStatus) {
+
             throw new BusinessRuleException(
-                    "Race already has status " + newStatus
+                    "Race already has status "
+                            + newStatus
             );
         }
 
@@ -284,7 +305,10 @@ public class RaceService {
                             );
                 };
 
-        if (!validNextStatuses.contains(newStatus)) {
+        if (!validNextStatuses.contains(
+                newStatus
+        )) {
+
             throw new BusinessRuleException(
                     "Invalid race status transition from "
                             + currentStatus
