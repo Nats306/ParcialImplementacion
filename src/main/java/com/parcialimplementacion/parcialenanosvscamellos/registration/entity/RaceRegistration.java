@@ -11,6 +11,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
@@ -40,6 +41,18 @@ import java.time.LocalDateTime;
                         name = "uk_registration_race_starting_position",
                         columnNames = {"race_id", "starting_position"}
                 )
+        },
+        indexes = {
+                // race_id ya queda cubierto como columna líder de las tres
+                // unique constraints de arriba. competitor_id y team_id solo
+                // aparecen como segunda columna ahí, así que una consulta que
+                // filtre unicamente por uno de los dos no puede usar esos
+                // índices compuestos: se agregan aparte, igual que status,
+                // que es el filtro típico para revisar inscripciones
+                // pendientes de aprobar.
+                @Index(name = "idx_registration_competitor", columnList = "competitor_id"),
+                @Index(name = "idx_registration_team", columnList = "team_id"),
+                @Index(name = "idx_registration_status", columnList = "status")
         }
 )
 @Getter

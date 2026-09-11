@@ -1,0 +1,63 @@
+@if (loading()) {
+  <p class="empty-state">Cargando…</p>
+} @else if (team()) {
+  @if (team(); as t) {
+  <div class="page-header">
+    <div>
+      <a routerLink="/teams" class="text-muted back-link">← Equipos</a>
+      <h1>{{ t.name }}</h1>
+      <p>Entrenador/a: {{ t.coach }} · <app-status-badge [status]="t.status" /></p>
+    </div>
+  </div>
+
+  @if (t.description) {
+    <p class="card description-card">{{ t.description }}</p>
+  }
+
+  <div class="stat-row">
+    <div class="card stat-mini">
+      <div class="stat-value">{{ t.memberCount }}</div>
+      <div class="stat-label">Miembros</div>
+    </div>
+    <div class="card stat-mini">
+      <div class="stat-value">{{ t.victories }}</div>
+      <div class="stat-label">Victorias</div>
+    </div>
+    <div class="card stat-mini">
+      <div class="stat-value">{{ t.defeats }}</div>
+      <div class="stat-label">Derrotas</div>
+    </div>
+  </div>
+
+  <div class="card members-card">
+    <h2>Miembros</h2>
+
+    @if (t.members.length === 0) {
+      <p class="empty-state">Este equipo todavía no tiene miembros.</p>
+    } @else {
+      <ul class="member-list">
+        @for (m of t.members; track m.id) {
+          <li>
+            <span>{{ m.name }} <span class="text-muted">"{{ m.nickname }}"</span></span>
+            <button class="btn btn-danger btn-sm" *appHasRole="['ADMINISTRATOR']" (click)="removeMember(m.id)">
+              Quitar
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <div class="add-member-row" *appHasRole="['ADMINISTRATOR']">
+      <select [(ngModel)]="selectedCompetitorId">
+        <option value="">Elegir competidor para agregar…</option>
+        @for (c of availableCompetitors(); track c.id) {
+          <option [value]="c.id">{{ c.name }} ({{ c.competitorType }})</option>
+        }
+      </select>
+      <button class="btn btn-primary btn-sm" [disabled]="!selectedCompetitorId() || addingMember()" (click)="addMember()">
+        Agregar
+      </button>
+    </div>
+  </div>
+  }
+}

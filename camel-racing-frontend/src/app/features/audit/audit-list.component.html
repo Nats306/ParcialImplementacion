@@ -1,0 +1,80 @@
+<div class="page-header">
+  <div>
+    <h1>Audit log</h1>
+    <p>Historial de acciones importantes del sistema. Solo visible para administradores.</p>
+  </div>
+</div>
+
+<div class="filters-bar">
+  <div class="field">
+    <label>Usuario</label>
+    <input type="text" [(ngModel)]="usernameFilter" (ngModelChange)="applyFilters()" placeholder="usuario…" />
+  </div>
+  <div class="field">
+    <label>Tipo de entidad</label>
+    <select [(ngModel)]="entityTypeFilter" (ngModelChange)="applyFilters()">
+      <option value="">Todas</option>
+      @for (t of entityTypes; track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+  </div>
+  <div class="field">
+    <label>Acción</label>
+    <select [(ngModel)]="actionFilter" (ngModelChange)="applyFilters()">
+      <option value="">Todas</option>
+      @for (a of actions; track a) {
+        <option [value]="a">{{ actionLabel(a) }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <p class="empty-state">Cargando…</p>
+  } @else if (page()?.content?.length === 0) {
+    <p class="empty-state">No hay entradas de audit log con esos filtros.</p>
+  } @else {
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha y hora</th>
+            <th>Usuario</th>
+            <th>Acción</th>
+            <th>Entidad</th>
+            <th>Descripción</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (entry of page()?.content; track entry.id) {
+            <tr class="clickable-row" (click)="toggleExpanded(entry)">
+              <td class="text-muted">{{ formatDate(entry.timestamp) }}</td>
+              <td>{{ entry.username }}</td>
+              <td><span class="badge action-badge">{{ actionLabel(entry.action) }}</span></td>
+              <td>{{ entry.entityType }}@if (entry.entityId) { <span class="text-muted">#{{ entry.entityId }}</span> }</td>
+              <td>{{ entry.description }}</td>
+              <td class="text-muted">{{ expandedId() === entry.id ? '▲' : '▼' }}</td>
+            </tr>
+            @if (expandedId() === entry.id && entry.newValue) {
+              <tr class="detail-row">
+                <td colspan="6">
+                  <span class="text-muted">Datos enviados:</span>
+                  <pre>{{ entry.newValue }}</pre>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.first" (click)="goToPage(-1)">← Anterior</button>
+      <span>Página {{ page()!.number + 1 }} de {{ page()!.totalPages || 1 }}</span>
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.last" (click)="goToPage(1)">Siguiente →</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,96 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <h2>{{ isEdit ? 'Editar carrera' : 'Nueva carrera' }}</h2>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">{{ errorMessage() }}</div>
+  }
+
+  <div class="form-grid">
+    <div class="field">
+      <label for="name">Nombre</label>
+      <input id="name" type="text" formControlName="name" [class.invalid]="form.get('name')!.invalid && form.get('name')!.touched" />
+      @if (form.get('name')!.invalid && form.get('name')!.touched) {
+        <span class="error">Este campo es obligatorio.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="organizer">Organizador</label>
+      <input id="organizer" type="text" formControlName="organizer" [class.invalid]="form.get('organizer')!.invalid && form.get('organizer')!.touched" />
+      @if (form.get('organizer')!.invalid && form.get('organizer')!.touched) {
+        <span class="error">Este campo es obligatorio.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="raceType">Tipo</label>
+      <select id="raceType" formControlName="raceType">
+        @for (t of types; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="distanceMeters">Distancia (m)</label>
+      <input id="distanceMeters" type="number" formControlName="distanceMeters" [class.invalid]="form.get('distanceMeters')!.invalid && form.get('distanceMeters')!.touched" />
+      @if (form.get('distanceMeters')!.invalid && form.get('distanceMeters')!.touched) {
+        <span class="error">Ingresa una distancia mayor a 0.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="maxParticipants">Máximo de participantes</label>
+      <input id="maxParticipants" type="number" formControlName="maxParticipants" [class.invalid]="form.get('maxParticipants')!.invalid && form.get('maxParticipants')!.touched" />
+      @if (form.get('maxParticipants')!.invalid && form.get('maxParticipants')!.touched) {
+        <span class="error">Ingresa un número mayor a 0.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="startLocation">Punto de salida</label>
+      <input id="startLocation" type="text" formControlName="startLocation" [class.invalid]="form.get('startLocation')!.invalid && form.get('startLocation')!.touched" />
+      @if (form.get('startLocation')!.invalid && form.get('startLocation')!.touched) {
+        <span class="error">Este campo es obligatorio.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="finishLocation">Punto de llegada</label>
+      <input id="finishLocation" type="text" formControlName="finishLocation" [class.invalid]="form.get('finishLocation')!.invalid && form.get('finishLocation')!.touched" />
+      @if (form.get('finishLocation')!.invalid && form.get('finishLocation')!.touched) {
+        <span class="error">Este campo es obligatorio.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="scheduledDateTime">Fecha y hora de la carrera</label>
+      <input id="scheduledDateTime" type="datetime-local" formControlName="scheduledDateTime" [class.invalid]="form.get('scheduledDateTime')!.invalid && form.get('scheduledDateTime')!.touched" />
+      <span class="hint">Debe ser una fecha futura.</span>
+      @if (form.get('scheduledDateTime')!.invalid && form.get('scheduledDateTime')!.touched) {
+        <span class="error">Este campo es obligatorio.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label for="registrationDeadline">Cierre de inscripciones</label>
+      <input id="registrationDeadline" type="datetime-local" formControlName="registrationDeadline" [class.invalid]="form.get('registrationDeadline')!.invalid && form.get('registrationDeadline')!.touched" />
+      <span class="hint">Debe ser una fecha futura.</span>
+      @if (form.get('registrationDeadline')!.invalid && form.get('registrationDeadline')!.touched) {
+        <span class="error">Este campo es obligatorio.</span>
+      }
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="description">Descripción</label>
+    <textarea id="description" formControlName="description"></textarea>
+  </div>
+
+  <div class="form-actions">
+    <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</form>

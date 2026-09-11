@@ -1,0 +1,35 @@
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.tab {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.tab:hover {
+  border-color: var(--accent-amber);
+  color: var(--text-primary);
+}
+.tab.active {
+  background: var(--gradient-sunset);
+  border-color: transparent;
+  color: #1b1512;
+}
+
+.top-row {
+  background: var(--gradient-sunset-soft);
+}
+
+.points-cell {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--accent-gold);
+}

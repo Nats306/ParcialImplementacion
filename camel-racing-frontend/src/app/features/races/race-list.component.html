@@ -1,0 +1,84 @@
+<div class="page-header">
+  <div>
+    <h1>Carreras</h1>
+    <p>Calendario de carreras de la temporada.</p>
+  </div>
+  <button class="btn btn-primary" *appHasRole="['ADMINISTRATOR', 'RACE_ORGANIZER']" (click)="openCreate()">+ Nueva carrera</button>
+</div>
+
+<div class="filters-bar">
+  <div class="field">
+    <label>Nombre</label>
+    <input type="text" [(ngModel)]="nameFilter" (ngModelChange)="applyFilters()" placeholder="Buscar…" />
+  </div>
+  <div class="field">
+    <label>Tipo</label>
+    <select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()">
+      <option value="">Todos</option>
+      @for (t of types; track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+      <option value="">Todos</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <p class="empty-state">Cargando…</p>
+  } @else if (page()?.content?.length === 0) {
+    <p class="empty-state">No hay carreras con esos filtros.</p>
+  } @else {
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Carrera</th>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of page()?.content; track r.id) {
+            <tr [routerLink]="['/races', r.id]" class="clickable-row">
+              <td>
+                <strong>{{ r.name }}</strong>
+                <div class="text-muted">{{ r.startLocation }} → {{ r.finishLocation }}</div>
+              </td>
+              <td>{{ formatDate(r.scheduledDateTime) }}</td>
+              <td><app-status-badge [status]="r.raceType" /></td>
+              <td><app-status-badge [status]="r.raceStatus" /></td>
+              <td class="row-actions">
+                <button class="btn btn-danger btn-sm" *appHasRole="['ADMINISTRATOR']" (click)="remove(r, $event)">Eliminar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.first" (click)="goToPage(-1)">← Anterior</button>
+      <span>Página {{ page()!.number + 1 }} de {{ page()!.totalPages || 1 }}</span>
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.last" (click)="goToPage(1)">Siguiente →</button>
+    </div>
+  }
+</div>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal-panel card" (click)="$event.stopPropagation()">
+      <app-race-form [race]="null" (saved)="onSaved()" (cancelled)="closeForm()" />
+    </div>
+  </div>
+}

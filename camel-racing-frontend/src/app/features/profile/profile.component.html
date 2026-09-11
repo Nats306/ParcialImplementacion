@@ -1,0 +1,39 @@
+<div class="page-header">
+  <div>
+    <h1>Mi perfil</h1>
+    <p>Datos de la sesión iniciada.</p>
+  </div>
+</div>
+
+@if (profile(); as p) {
+  <div class="card profile-card">
+    <div class="avatar">{{ (p.fullName || p.username).charAt(0) }}</div>
+
+    <div class="profile-fields">
+      <div class="profile-field">
+        <span class="text-muted">Nombre completo</span>
+        <div>{{ p.fullName || '—' }}</div>
+      </div>
+      <div class="profile-field">
+        <span class="text-muted">Usuario</span>
+        <div>{{ p.username }}</div>
+      </div>
+      <div class="profile-field">
+        <span class="text-muted">Correo</span>
+        <div>{{ p.email || '—' }}</div>
+      </div>
+      <div class="profile-field">
+        <span class="text-muted">Roles</span>
+        <div class="roles">
+          @for (r of p.roles; track r) {
+            <span class="badge role-badge">{{ roleLabel(r) }}</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn btn-danger" (click)="logout()">Cerrar sesión</button>
+    </div>
+  </div>
+}

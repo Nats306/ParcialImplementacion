@@ -1,0 +1,82 @@
+.back-link {
+  display: inline-block;
+  text-decoration: none;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+.back-link:hover {
+  color: var(--accent-amber);
+}
+
+.status-card {
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.transitions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border-subtle);
+}
+.transitions .btn {
+  padding: 0.3rem 0.5rem;
+}
+
+.section-card {
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+}
+.section-header h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.add-row {
+  display: flex;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.add-row select {
+  flex: 2;
+  min-width: 200px;
+}
+.add-row input {
+  flex: 1;
+  min-width: 140px;
+}
+
+.pending-results {
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--border-subtle);
+}
+.pending-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.6rem;
+}

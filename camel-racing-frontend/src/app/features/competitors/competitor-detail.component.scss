@@ -1,0 +1,68 @@
+.back-link {
+  display: inline-block;
+  text-decoration: none;
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+.back-link:hover {
+  color: var(--accent-amber);
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.status-card {
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-mini {
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+.section-card {
+  padding: 1.5rem;
+}
+.section-card h2 {
+  font-size: 1.05rem;
+  margin-bottom: 1rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem 1.5rem;
+}
+.info-grid > div > span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.info-grid > div > div {
+  margin-top: 0.15rem;
+  font-size: 0.95rem;
+}

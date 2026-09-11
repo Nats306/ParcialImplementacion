@@ -1,0 +1,88 @@
+<div class="page-header">
+  <div>
+    <h1>Equipos</h1>
+    <p>Equipos que compiten en la liga y sus miembros.</p>
+  </div>
+  <button class="btn btn-primary" *appHasRole="['ADMINISTRATOR']" (click)="openCreate()">+ Nuevo equipo</button>
+</div>
+
+<div class="filters-bar">
+  <div class="field">
+    <label>Nombre</label>
+    <input type="text" [(ngModel)]="nameFilter" (ngModelChange)="applyFilters()" placeholder="Buscar…" />
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+      <option value="">Todos</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <p class="empty-state">Cargando…</p>
+  } @else if (page()?.content?.length === 0) {
+    <p class="empty-state">No hay equipos con esos filtros.</p>
+  } @else {
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Entrenador/a</th>
+            <th>Miembros</th>
+            <th>Estado</th>
+            <th>V / D</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of page()?.content; track t.id) {
+            <tr [routerLink]="['/teams', t.id]" class="clickable-row">
+              <td><strong>{{ t.name }}</strong></td>
+              <td>{{ t.coach }}</td>
+              <td>{{ t.memberCount }}</td>
+              <td>
+                <app-status-badge [status]="t.status" />
+                <select
+                  class="inline-status"
+                  *appHasRole="['ADMINISTRATOR']"
+                  [ngModel]="t.status"
+                  (click)="$event.stopPropagation()"
+                  (ngModelChange)="changeStatus(t, $event)"
+                >
+                  @for (s of statuses; track s) {
+                    <option [value]="s">{{ s }}</option>
+                  }
+                </select>
+              </td>
+              <td>{{ t.victories }} / {{ t.defeats }}</td>
+              <td class="row-actions">
+                <button class="btn btn-ghost btn-sm" *appHasRole="['ADMINISTRATOR']" (click)="openEdit(t, $event)">Editar</button>
+                <button class="btn btn-danger btn-sm" *appHasRole="['ADMINISTRATOR']" (click)="remove(t, $event)">Eliminar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.first" (click)="goToPage(-1)">← Anterior</button>
+      <span>Página {{ page()!.number + 1 }} de {{ page()!.totalPages || 1 }}</span>
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.last" (click)="goToPage(1)">Siguiente →</button>
+    </div>
+  }
+</div>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal-panel card" (click)="$event.stopPropagation()">
+      <app-team-form [team]="editingTeam()" (saved)="onSaved()" (cancelled)="closeForm()" />
+    </div>
+  </div>
+}

@@ -1,0 +1,83 @@
+<div class="page-header">
+  <div>
+    <h1>Clasificación</h1>
+    <p>Puntos acumulados por resultados registrados.</p>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab" [class.active]="tab() === 'competitors'" (click)="tab.set('competitors')">Competidores</button>
+  <button class="tab" [class.active]="tab() === 'teams'" (click)="tab.set('teams')">Equipos</button>
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <p class="empty-state">Cargando…</p>
+  } @else if (tab() === 'competitors') {
+    @if (competitorStandings().length === 0) {
+      <p class="empty-state">Todavía no hay resultados registrados.</p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Competidor</th>
+              <th>Puntos</th>
+              <th>🥇</th>
+              <th>🥈</th>
+              <th>🥉</th>
+              <th>Carreras</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of competitorStandings(); track row.competitorId) {
+              <tr [class.top-row]="row.rank <= 3">
+                <td>{{ medalFor(row.rank) || row.rank }}</td>
+                <td><strong>{{ row.name }}</strong> <span class="text-muted">"{{ row.nickname }}"</span></td>
+                <td class="points-cell">{{ row.points }}</td>
+                <td>{{ row.victories }}</td>
+                <td>{{ row.secondPlaces }}</td>
+                <td>{{ row.thirdPlaces }}</td>
+                <td>{{ row.racesWithResults }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  } @else {
+    @if (teamStandings().length === 0) {
+      <p class="empty-state">Todavía no hay resultados registrados.</p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Equipo</th>
+              <th>Puntos</th>
+              <th>🥇</th>
+              <th>🥈</th>
+              <th>🥉</th>
+              <th>Carreras</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of teamStandings(); track row.teamId) {
+              <tr [class.top-row]="row.rank <= 3">
+                <td>{{ medalFor(row.rank) || row.rank }}</td>
+                <td><strong>{{ row.name }}</strong></td>
+                <td class="points-cell">{{ row.points }}</td>
+                <td>{{ row.victories }}</td>
+                <td>{{ row.secondPlaces }}</td>
+                <td>{{ row.thirdPlaces }}</td>
+                <td>{{ row.racesWithResults }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+</div>

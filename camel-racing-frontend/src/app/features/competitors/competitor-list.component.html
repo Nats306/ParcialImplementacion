@@ -1,0 +1,100 @@
+<div class="page-header">
+  <div>
+    <h1>Competidores</h1>
+    <p>Enanos, camellos y competidores medianos de la liga.</p>
+  </div>
+  <button class="btn btn-primary" *appHasRole="['ADMINISTRATOR']" (click)="openCreate()">+ Nuevo competidor</button>
+</div>
+
+<div class="filters-bar">
+  <div class="field">
+    <label>Buscar</label>
+    <input type="text" [(ngModel)]="nameFilter" placeholder="Nombre o apodo…" />
+  </div>
+  <div class="field">
+    <label>Tipo</label>
+    <select [(ngModel)]="typeFilter" (ngModelChange)="applyFilters()">
+      <option value="">Todos</option>
+      @for (t of types; track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+  </div>
+  <div class="field">
+    <label>Estado</label>
+    <select [(ngModel)]="statusFilter" (ngModelChange)="applyFilters()">
+      <option value="">Todos</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ s }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  @if (loading()) {
+    <p class="empty-state">Cargando…</p>
+  } @else if (visibleContent().length === 0) {
+    <p class="empty-state">No hay competidores con esos filtros.</p>
+  } @else {
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>País</th>
+            <th>Estado</th>
+            <th>V / D</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of visibleContent(); track c.id) {
+            <tr [routerLink]="['/competitors', c.id]" class="clickable-row">
+              <td>
+                <strong>{{ c.name }}</strong>
+                <div class="text-muted">"{{ c.nickname }}"</div>
+              </td>
+              <td><app-status-badge [status]="c.competitorType" /></td>
+              <td>{{ c.country }}</td>
+              <td>
+                <app-status-badge [status]="c.currentStatus" />
+                <select
+                  class="inline-status"
+                  *appHasRole="['ADMINISTRATOR']"
+                  [ngModel]="c.currentStatus"
+                  (click)="$event.stopPropagation()"
+                  (ngModelChange)="changeStatus(c, $event)"
+                >
+                  @for (s of statuses; track s) {
+                    <option [value]="s">{{ s }}</option>
+                  }
+                </select>
+              </td>
+              <td>{{ c.victories }} / {{ c.defeats }}</td>
+              <td class="row-actions">
+                <button class="btn btn-ghost btn-sm" *appHasRole="['ADMINISTRATOR']" (click)="openEdit(c, $event)">Editar</button>
+                <button class="btn btn-danger btn-sm" *appHasRole="['ADMINISTRATOR']" (click)="remove(c, $event)">Eliminar</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.first" (click)="goToPage(-1)">← Anterior</button>
+      <span>Página {{ page()!.number + 1 }} de {{ page()!.totalPages || 1 }}</span>
+      <button class="btn btn-ghost btn-sm" [disabled]="page()!.last" (click)="goToPage(1)">Siguiente →</button>
+    </div>
+  }
+</div>
+
+@if (showForm()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <div class="modal-panel card" (click)="$event.stopPropagation()">
+      <app-competitor-form [competitor]="editingCompetitor()" (saved)="onSaved()" (cancelled)="closeForm()" />
+    </div>
+  </div>
+}

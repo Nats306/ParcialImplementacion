@@ -1,0 +1,138 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-void);
+}
+
+.sidebar {
+  width: 240px;
+  flex: 0 0 240px;
+  background: var(--bg-base);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 1rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.4rem 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 1rem;
+}
+.brand-mark {
+  font-size: 1.4rem;
+  filter: drop-shadow(0 0 8px rgba(247, 165, 49, 0.35));
+}
+.brand-text {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.nav-item:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+.nav-item.active {
+  background: var(--gradient-sunset-soft);
+  color: var(--accent-gold);
+  font-weight: 700;
+}
+.nav-icon {
+  font-size: 1rem;
+}
+
+.user-card {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-name:hover {
+  color: var(--accent-amber);
+}
+.role-badge {
+  align-self: flex-start;
+  background: var(--gradient-sunset-soft);
+  color: var(--accent-gold);
+}
+.logout-btn {
+  margin-top: 0.25rem;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 2rem 2.5rem;
+  max-width: 1200px;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    position: static;
+    height: auto;
+    width: auto;
+    flex: initial;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    overflow-x: auto;
+  }
+  .brand {
+    border-bottom: none;
+    padding: 0.25rem 0.4rem;
+    margin-bottom: 0;
+  }
+  .nav {
+    flex-direction: row;
+  }
+  .user-card {
+    border-top: none;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 0;
+  }
+  .content {
+    padding: 1.25rem;
+  }
+}

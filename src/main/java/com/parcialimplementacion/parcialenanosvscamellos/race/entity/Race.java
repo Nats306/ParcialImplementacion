@@ -7,6 +7,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -19,7 +20,16 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "races")
+@Table(
+        name = "races",
+        indexes = {
+                // Filtros más comunes en /api/races y en el dashboard
+                // (carreras próximas por estado, ordenadas por fecha).
+                @Index(name = "idx_race_status", columnList = "race_status"),
+                @Index(name = "idx_race_type", columnList = "race_type"),
+                @Index(name = "idx_race_scheduled_date", columnList = "scheduled_date_time")
+        }
+)
 @Builder
 @Getter
 @Setter
@@ -33,6 +43,7 @@ public class Race {
 
     @Column(nullable = false, length = 150)
     private String name;
+    
 
     @Column(length = 500)
     private String description;

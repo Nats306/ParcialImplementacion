@@ -1,0 +1,35 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <h2>{{ isEdit ? 'Editar equipo' : 'Nuevo equipo' }}</h2>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">{{ errorMessage() }}</div>
+  }
+
+  <div class="field">
+    <label for="name">Nombre</label>
+    <input id="name" type="text" formControlName="name" [class.invalid]="form.get('name')!.invalid && form.get('name')!.touched" />
+    @if (form.get('name')!.invalid && form.get('name')!.touched) {
+      <span class="error">Este campo es obligatorio.</span>
+    }
+  </div>
+
+  <div class="field">
+    <label for="coach">Entrenador/a</label>
+    <input id="coach" type="text" formControlName="coach" [class.invalid]="form.get('coach')!.invalid && form.get('coach')!.touched" />
+    @if (form.get('coach')!.invalid && form.get('coach')!.touched) {
+      <span class="error">Este campo es obligatorio.</span>
+    }
+  </div>
+
+  <div class="field">
+    <label for="description">Descripción</label>
+    <textarea id="description" formControlName="description"></textarea>
+  </div>
+
+  <div class="form-actions">
+    <button type="button" class="btn btn-ghost" (click)="cancelled.emit()">Cancelar</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</form>

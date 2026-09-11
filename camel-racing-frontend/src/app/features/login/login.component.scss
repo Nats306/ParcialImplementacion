@@ -1,0 +1,162 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.login-screen {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  background: linear-gradient(180deg, #4a5568 0%, #7c5a4a 38%, #c1272d 62%, #f2622e 78%, #f7a531 100%);
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.sun {
+  position: absolute;
+  left: 18%;
+  top: 30%;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fcd382 0%, #f7a531 45%, rgba(247, 165, 49, 0) 72%);
+  filter: blur(2px);
+}
+
+.monolith {
+  position: absolute;
+  left: 22%;
+  top: 8%;
+  width: 90px;
+  height: 78%;
+  background: linear-gradient(180deg, #f7a531 0%, #f2622e 45%, #c1272d 100%);
+  box-shadow: 0 0 60px rgba(242, 98, 46, 0.35);
+  opacity: 0.85;
+}
+.monolith::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(20, 16, 14, 0.35);
+}
+
+.dune {
+  position: absolute;
+  bottom: -10%;
+  width: 140%;
+  height: 40%;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  background: rgba(20, 16, 14, 0.55);
+}
+.dune-1 {
+  left: -20%;
+  height: 30%;
+  background: rgba(20, 16, 14, 0.4);
+}
+.dune-2 {
+  left: -30%;
+  bottom: -14%;
+  height: 24%;
+  background: rgba(20, 16, 14, 0.65);
+}
+
+.horizon {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 34%;
+  height: 1px;
+  background: rgba(245, 235, 224, 0.18);
+}
+
+.login-panel {
+  position: relative;
+  z-index: 2;
+  width: min(460px, 92vw);
+  margin: 4vh 5vw 4vh 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.brand {
+  color: #f5ebe0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+.brand-kicker {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(245, 235, 224, 0.75);
+  margin-bottom: 0.6rem;
+}
+.brand h1 {
+  font-size: 1.9rem;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.login-card {
+  padding: 1.75rem;
+  background: rgba(27, 21, 18, 0.86);
+  backdrop-filter: blur(10px);
+}
+.login-card h2 {
+  font-size: 1.15rem;
+  margin-bottom: 1.1rem;
+}
+
+.login-submit {
+  width: 100%;
+  justify-content: center;
+  padding: 0.75rem;
+  margin-top: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.demo-users {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+}
+
+.chip {
+  border: 1px solid var(--border-strong);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+.chip:hover {
+  border-color: var(--accent-amber);
+  color: var(--text-primary);
+}
+
+@media (max-width: 720px) {
+  .login-screen {
+    justify-content: center;
+  }
+  .login-panel {
+    margin: 4vh 0;
+  }
+  .brand h1 {
+    font-size: 1.5rem;
+  }
+}

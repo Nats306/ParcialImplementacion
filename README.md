@@ -34,12 +34,14 @@ The project uses a layered architecture and PostgreSQL persistence through Docke
 | PostgreSQL with Docker | ✅ Implemented and tested |
 | HTTP error handling | ✅ Implemented |
 | Validation | ✅ Implemented |
-| Security / User / Role | ❌ Pending |
-| Audit Log | ❌ Pending |
-| Automated tests | ❌ Pending |
+| Security / Role-based authorization (Keycloak) | ✅ Implemented |
+| Audit Log | ✅ Implemented and tested |
+| Automated tests | ✅ Implemented (16 tests, 15 required scenarios + context load) |
+| Database indexes | ✅ Implemented |
+| Entity-Relationship Diagram | ✅ Documented (`database-erd.md`) |
 | Full backend Docker image | ⏳ Pending |
-| GUI | ❌ Pending |
-| Final authentication/authorization integration | ❌ Pending |
+| GUI (Angular frontend) | ✅ Implemented |
+| Final authentication/authorization integration | ✅ Implemented |
 
 ---
 
@@ -51,6 +53,9 @@ The project uses a layered architecture and PostgreSQL persistence through Docke
 - Spring Data JPA
 - Hibernate
 - Jakarta Validation
+- Spring Security (OAuth2 Resource Server, JWT)
+- Keycloak (identity provider)
+- springdoc-openapi / Swagger UI
 - PostgreSQL
 - Docker
 - Docker Compose
@@ -58,6 +63,13 @@ The project uses a layered architecture and PostgreSQL persistence through Docke
 - Lombok
 - PowerShell for manual API testing
 - IntelliJ IDEA
+
+Frontend:
+
+- Angular 18 (standalone components, signals)
+- TypeScript
+- Reactive Forms
+- Custom SCSS design system (dark "desert sunset" theme)
 
 ---
 
@@ -102,7 +114,13 @@ The main backend structure is organized approximately as follows:
 src/main/java/com/parcialimplementacion/parcialenanosvscamellos/
 
 ├── common/
+│   ├── config/       (OpenApiConfig)
 │   └── exceptions/
+│
+├── security/
+│   ├── config/        (SecurityConfig, JWT decoder, CORS)
+│   ├── dto/            (LoginRequest, RefreshRequest, UserProfileResponse)
+│   └── AuthController.java
 │
 ├── competitor/
 │   ├── controller/
@@ -174,7 +192,7 @@ spring.jpa.hibernate.ddl-auto=update
 
 This means that Hibernate creates or updates the required database tables automatically during development.
 
-Some of the main tables created by the system are:
+Tables created by the system:
 
 ```text
 competitors
@@ -182,7 +200,107 @@ teams
 races
 race_registrations
 race_results
+audit_logs
 ```
+
+`users`/`roles` are not tables here — Keycloak owns those.
+
+## Entity-Relationship Diagram
+
+```mermaid
+erDiagram
+    TEAM ||--o{ COMPETITOR : "tiene miembros"
+    RACE ||--o{ RACE_REGISTRATION : "recibe inscripciones"
+    COMPETITOR ||--o{ RACE_REGISTRATION : "se inscribe"
+    TEAM ||--o{ RACE_REGISTRATION : "se inscribe (carreras TEAM)"
+    RACE_REGISTRATION ||--o| RACE_RESULT : "produce"
+    RACE ||--o{ RACE_RESULT : "tiene resultados"
+
+    TEAM {
+        bigint id PK
+        varchar name UK "unique, not null"
+        varchar description
+        date creation_date "not null"
+        varchar coach "not null"
+        varchar status "enum: TeamStatus, not null"
+        int victories "not null"
+        int defeats "not null"
+    }
+
+    COMPETITOR {
+        uuid id PK
+        varchar name "not null"
+        varchar nickname UK "unique, not null"
+        varchar competitor_type "enum: CompetitorType, not null"
+        int age "not null"
+        double weight "not null"
+        double height "not null"
+        varchar country "not null"
+        varchar current_status "enum: CompetitorStatus, not null"
+        date registration_date "not null"
+        bigint team_id FK "nullable"
+        int victories
+        int defeats
+        int completed_races
+    }
+
+    RACE {
+        bigint id PK
+        varchar name "not null"
+        varchar description
+        datetime scheduled_date_time "not null"
+        varchar start_location "not null"
+        varchar finish_location "not null"
+        double distance_meters "not null"
+        int max_participants "not null"
+        varchar race_type "enum: RaceType, not null"
+        varchar race_status "enum: RaceStatus, not null"
+        varchar organizer "not null"
+        datetime registration_deadline "not null"
+        datetime creation_date "not null"
+        datetime last_modification_date "not null"
+    }
+
+    RACE_REGISTRATION {
+        bigint id PK
+        bigint race_id FK "not null"
+        uuid competitor_id FK "nullable, según race_type"
+        bigint team_id FK "nullable, según race_type"
+        datetime registration_date "not null"
+        varchar status "enum: RegistrationStatus, not null"
+        int starting_position "nullable, unique junto a race_id"
+        varchar validation_notes
+        varchar registered_by "not null"
+    }
+
+    RACE_RESULT {
+        bigint id PK
+        bigint race_id FK "not null"
+        bigint registration_id FK "unique, not null (1:1)"
+        int starting_position "not null"
+        int final_position
+        bigint completion_time_millis
+        bigint penalty_time_millis "not null"
+        varchar result_status "enum: ResultStatus, not null"
+        varchar notes
+        varchar recorded_by "not null"
+        datetime recorded_at "not null"
+    }
+
+    AUDIT_LOG {
+        bigint id PK
+        varchar username "not null (referencia externa, sin FK — el usuario vive en Keycloak)"
+        varchar action "enum: AuditAction, not null"
+        varchar entity_type "not null"
+        varchar entity_id
+        datetime timestamp "not null"
+        varchar description
+        text previous_value "opcional, no usado actualmente"
+        text new_value
+    }
+```
+
+Full version also kept at [`database-erd.md`](./database-erd.md).
 
 ---
 
@@ -226,6 +344,22 @@ DB_NAME=camel_racing
 DB_USERNAME=your_database_user
 DB_PASSWORD=your_database_password
 DB_PORT=5433
+
+# Keycloak
+KEYCLOAK_ADMIN=admin
+KEYCLOAK_ADMIN_PASSWORD=change_me
+KEYCLOAK_PORT=8081
+KEYCLOAK_REALM=camel-racing
+KEYCLOAK_CLIENT_ID=camel-racing-app
+KEYCLOAK_PUBLIC_URL=http://localhost:8081
+# While the backend runs on the host (bootRun/IntelliJ, not yet dockerized),
+# this must also be http://localhost:8081 — "keycloak" only resolves inside
+# the Docker network. Switch it to http://keycloak:8080 once the backend
+# gets its own service in compose.yml.
+KEYCLOAK_INTERNAL_URL=http://localhost:8081
+
+# CORS (frontend web, cuando exista)
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:4200,http://localhost:3000
 ```
 
 Create a local `.env` based on `.env.example`.
@@ -274,7 +408,7 @@ spring.web.error.include-exception=false
 
 # ▶️ Running the Application
 
-## 1. Start PostgreSQL
+## 1. Start PostgreSQL + Keycloak
 
 From the project root:
 
@@ -282,11 +416,22 @@ From the project root:
 docker compose up -d
 ```
 
+This starts two containers: the PostgreSQL database and Keycloak (with the
+`camel-racing` realm, its three roles and its three test users already
+imported from `keycloak/realm-export.json`).
+
 Verify:
 
 ```powershell
 docker compose ps
 ```
+
+Both `db` and `keycloak` should appear as healthy. Keycloak can take
+10-30 seconds to finish starting the first time.
+
+Keycloak admin console (for administering the realm manually, not needed
+for normal use): http://localhost:8081 — login with `KEYCLOAK_ADMIN` /
+`KEYCLOAK_ADMIN_PASSWORD` from `.env`.
 
 ---
 
@@ -336,27 +481,30 @@ This is normal. It means Spring Boot is active and waiting for HTTP requests.
 
 ---
 
-# ⚠️ IntelliJ Run Configuration
+# ▶️ Running from IntelliJ (green Run button)
 
-At the current development stage, the application has been tested successfully using:
+Works the same as `.\gradlew bootRun`. Just make sure `docker compose up -d`
+is already running (`db` and `keycloak` as `Up (healthy)`) before clicking
+Play.
+
+---
+
+# ✅ Automated Tests
+
+16 automated tests (JUnit 5 + MockMvc), covering the 15 required scenarios.
+Only PostgreSQL needs to be running.
 
 ```powershell
-.\gradlew bootRun
+.\gradlew test
 ```
 
-The standard green Run button in IntelliJ may still require additional datasource/environment-variable configuration.
-
-This does **not** prevent the backend from running.
-
-The tested execution method is:
-
-```text
-Docker PostgreSQL
-       +
-Gradle bootRun
-       +
-PowerShell HTTP requests
-```
+| Test class | Scenarios covered |
+|---|---|
+| `CompetitorApiTest` | Create a valid competitor · reject invalid weight · reject duplicated nickname |
+| `RaceApiTest` | Create a valid race · reject a race scheduled in the past |
+| `RegistrationApiTest` | Register an active competitor · reject a suspended competitor · reject a duplicated registration · reject registration after the deadline |
+| `ResultApiTest` | Record a valid result · reject two winners in one race |
+| `SecurityApiTest` | Prevent a viewer from creating a race · allow an administrator to create a race · 401 without a token · 404 for a missing resource |
 
 ---
 
@@ -1021,104 +1169,206 @@ This allowed verification that API operations were actually persisted in Postgre
 
 ---
 
-# 🔐 Security — Pending
+# 🔐 Security
 
-Authentication and authorization are still pending.
+Authentication and authorization are implemented with **Keycloak** as the
+identity provider and **Spring Security (OAuth2 Resource Server / JWT)** on
+the backend. Keycloak issues and signs the tokens; the backend only
+validates them (signature, issuer, expiration) and enforces roles. No
+password is ever stored or checked by this application.
 
-The final implementation must include concepts such as:
+## Roles
+
+| Role | Permissions |
+|---|---|
+| `ADMINISTRATOR` | Full access: manage competitors, teams, races, registrations, results, and (once implemented) the audit log. |
+| `RACE_ORGANIZER` | Manage races, registrations and results. Read-only on competitors and teams. |
+| `VIEWER` | Read-only on all public information: competitors, teams, races, results and standings. |
+
+## Endpoint authorization
+
+| Route group | GET | POST / PUT / PATCH / DELETE |
+|---|---|---|
+| `/api/competitors/**`, `/api/teams/**` | Any authenticated role | `ADMINISTRATOR` only |
+| `/api/races/**`, `/api/registrations/**`, `/api/results/**` | Any authenticated role | `ADMINISTRATOR` or `RACE_ORGANIZER` |
+| `/api/standings/**` | Any authenticated role | — (read-only resource) |
+| `/api/audit/**` (reserved for the audit log module) | `ADMINISTRATOR` only | — |
+| `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health`, `/api/auth/login`, `/api/auth/refresh` | Public | Public |
+
+A missing or invalid token returns `401 Unauthorized`. A valid token
+without the required role returns `403 Forbidden`. Both are returned in the
+same structured JSON error format as the rest of the API.
+
+## Test users (seeded by `keycloak/realm-export.json`)
+
+| Username | Password | Role |
+|---|---|---|
+| `admin` | `Admin123!` | `ADMINISTRATOR` |
+| `organizer` | `Organizer123!` | `RACE_ORGANIZER` |
+| `viewer` | `Viewer123!` | `VIEWER` |
+
+
+## Auth endpoints
 
 ```text
-User
-Role
-authentication
-authorization
-protected endpoints
+POST /api/auth/login    { "username": "...", "password": "..." }  → access_token, refresh_token
+POST /api/auth/refresh  { "refreshToken": "..." }                 → new access_token
+GET  /api/auth/profile  (Authorization: Bearer <token>)           → subject, username, email, roles
 ```
 
-Once implemented, fields currently sent manually such as:
+User creation/registration is **not** exposed by this API: with an
+external identity provider, creating and disabling users is an
+administration task performed in Keycloak (admin console or its own API),
+not a responsibility of this backend. The three seed users above are
+enough for development, testing and the demo video.
 
-```text
-registeredBy
-recordedBy
+## Example: log in and call a protected endpoint
+
+```powershell
+$login = Invoke-RestMethod `
+    -Method Post `
+    -Uri "http://localhost:8080/api/auth/login" `
+    -ContentType "application/json" `
+    -Body (@{ username = "admin"; password = "Admin123!" } | ConvertTo-Json)
+
+$token = $login.access_token
+
+Invoke-RestMethod `
+    -Method Get `
+    -Uri "http://localhost:8080/api/competitors" `
+    -Headers @{ Authorization = "Bearer $token" }
 ```
 
-should ideally be obtained from the authenticated user instead of being provided directly by the client.
+## Swagger UI
+
+Open http://localhost:8080/swagger-ui.html, click **Authorize**, and log
+in with one of the test users above. Swagger then sends the token
+automatically on every "Try it out" call.
+
+## 🌱 Sample Data
+
+`scripts/seed.ps1` creates sample competitors, teams and races through the
+API. Run it from the project root with the backend running:
+
+```powershell
+.\scripts\seed.ps1
+```
+
+## How the Docker networking issue was solved
+
+Keycloak and the backend eventually run as separate containers on the same
+Docker network. That creates a classic problem: the **issuer** written
+inside every token has to be a URL the *browser* can reach
+(`http://localhost:8081`), but the backend, running *inside* Docker,
+cannot resolve `localhost:8081` back to the Keycloak container — it has to
+call it by its service name (`http://keycloak:8080`).
+
+This is solved with two separate settings (`keycloak.public-url` for the
+issuer Keycloak actually writes into the token, `keycloak.internal-url` for
+where the backend fetches Keycloak's public signing keys from) and a
+manually built `JwtDecoder` in `SecurityConfig` instead of Spring's
+automatic `issuer-uri` discovery, which would otherwise require the
+backend to reach the *public* URL too. `KC_HOSTNAME` in `compose.yml`
+forces Keycloak to always report the public URL as its issuer, regardless
+of which network path the request came through.
+
+**Important while the backend itself is not yet dockerized** (current
+stage — it still runs from IntelliJ/`bootRun` on the host, only `db` and
+`keycloak` run in Docker): the host cannot resolve the Docker-network
+hostname `keycloak` either, exactly like the browser can't. So for now,
+`KEYCLOAK_INTERNAL_URL` in `.env` must also be `http://localhost:8081`
+(the same as `KEYCLOAK_PUBLIC_URL`), even though the property is meant for
+the *internal* Docker address. Once the backend gets its own service in
+`compose.yml` (see "Final Dockerization — Pending"), switch it back to
+`http://keycloak:8080` — at that point the backend really will be inside
+the Docker network and `localhost:8081` will stop working for it.
+
+`registeredBy` and `recordedBy` are still sent directly by the client on
+registration and result requests instead of being derived from the
+authenticated JWT — see [Known Limitations](#-known-limitations) below.
 
 ---
 
-# 🧾 Audit Log — Pending
+# 🧾 Audit Log
 
-Audit logging is also pending.
-
-The final system should record important actions such as:
-
-- Authentication events.
-- Creation and modification of competitors.
-- Team changes.
-- Race status changes.
-- Registration approvals/rejections.
-- Result creation/modification.
-- Important administrative operations.
-
----
-
-# 🧪 Automated Tests — Pending
-
-Manual integration tests have already been performed.
-
-Automated tests are still pending.
-
-The final project should include meaningful tests for service logic and important business rules.
-
-Examples:
+Records every successful state-changing request (username, action, entity
+type/id, timestamp, description). Read access is restricted to
+`ADMINISTRATOR`:
 
 ```text
-create competitor
-duplicate nickname
-create team
-add competitor to team
-duplicate team membership
-create race
-invalid race transition
-registration before deadline
-duplicate starting position
-race start with fewer than two participants
-race start with valid participants
-result for unapproved registration
-duplicate final position
-duplicate winner
-points calculation
-race completion without results
-race completion with results
+GET /api/audit?username=...&entityType=...&action=...&page=...
 ```
 
 ---
 
-# 🖥️ GUI — Pending
+# 🖥️ Frontend (Angular GUI)
 
-The graphical interface has not yet been implemented.
+The graphical interface is implemented as a standalone Angular 18
+application located in `camel-racing-frontend/`, at the project root.
 
-The final GUI should communicate exclusively with the REST API.
+It communicates exclusively with the REST API described in this document —
+it never touches PostgreSQL or Keycloak directly. Authentication is done
+through the backend's own `/api/auth/login` endpoint (which in turn talks
+to Keycloak); the frontend just stores the resulting access/refresh tokens
+and attaches the access token to every request via an HTTP interceptor.
 
-The GUI must **not access PostgreSQL directly**.
+## Stack
 
-Expected main flows include:
+- Angular 18, standalone components (no NgModules), signals
+- Angular Router with lazy-loaded routes and role-based route guards
+- Reactive Forms
+- A custom SCSS theme (dark, cinematic "desert sunset" palette)
+
+## Implemented flows
 
 ```text
-Login
-Competitors
-Teams
-Races
-Registrations
-Results
+Login (JWT via /api/auth/login)
+Dashboard
+Competitors      (full CRUD)
+Teams            (full CRUD + member management)
+Races            (full CRUD + lifecycle status transitions)
+Registrations    (register / approve / reject / cancel, inside race detail)
+Results          (record results, inside race detail)
 Standings
 ```
+
+Write actions (create/edit/delete, status changes, approvals, result entry)
+are shown or hidden in the UI based on the logged-in user's role
+(`ADMINISTRATOR` / `RACE_ORGANIZER` / `VIEWER`), matching the same
+permissions enforced server-side in [Security](#-security). The UI gating
+is a convenience only — the backend is the real authorization boundary.
+
+## Running the frontend
+
+Requires Node.js (18+) and npm. From the project root:
+
+```powershell
+cd camel-racing-frontend
+npm install
+npx ng serve
+```
+
+The app will be available at:
+
+```text
+http://localhost:4200
+```
+
+The backend must be running at the same time (`docker compose up -d` for
+PostgreSQL/Keycloak, then `.\gradlew bootRun` for Spring Boot — see
+[Running the Application](#️-running-the-application)). CORS is already
+configured on the backend to accept requests from `http://localhost:4200`
+(see `CORS_ALLOWED_ORIGINS` in `.env.example`), so no extra configuration
+is needed.
+
+Log in with any of the [test users](#test-users-seeded-by-keycloakrealm-exportjson)
+seeded in Keycloak (`admin` / `organizer` / `viewer`).
 
 ---
 
 # 🐳 Final Dockerization — Pending
 
-Currently PostgreSQL runs through Docker.
+PostgreSQL and Keycloak currently run through Docker.
 
 The Spring Boot backend is currently started locally with:
 
@@ -1139,6 +1389,7 @@ and have that single command start at least:
 ```text
 Backend
 PostgreSQL
+Keycloak
 ```
 
 without requiring a separate manual `bootRun`.
@@ -1196,6 +1447,7 @@ Do not remove the PostgreSQL volume unless intentionally resetting the database.
 Current main API areas:
 
 ```text
+/api/auth
 /api/competitors
 /api/teams
 /api/races
@@ -1210,17 +1462,11 @@ Current main API areas:
 
 # 📌 Important Notes
 
-- PostgreSQL currently uses host port `5433` in the tested local environment.
-- PostgreSQL internally still listens on port `5432`.
-- Real database credentials must never be committed.
-- `.env` must remain ignored.
-- `.env.example` may be committed with placeholder values.
-- The application has been successfully executed using Gradle `bootRun`.
-- The IntelliJ green Run configuration may require additional local datasource configuration.
-- Security and authorization are still pending.
-- Automated tests are still pending.
-- GUI development is still pending.
-- Final full-stack Docker Compose configuration is still pending.
+- PostgreSQL host port is whatever `DB_PORT` is set in your local `.env`
+  (internally it's always `5432`).
+- Keycloak uses host port `8081`; the backend runs on `8080`; the frontend
+  on `4200`.
+- `.env` is git-ignored; `.env.example` has placeholder values only.
 
 ---
 
@@ -1248,17 +1494,39 @@ Statistics ✅
      │
      ▼
 Standings ✅
+     │
+     ▼
+Security (Keycloak) ✅
+     │
+     ▼
+Audit Log ✅
+     │
+     ▼
+Automated Tests ✅
+     │
+     ▼
+GUI (Angular) ✅
 ```
 
-Remaining major components:
+Remaining major component:
 
 ```text
-Security / User / Role ❌
-AuditLog ❌
-Automated Tests ❌
-GUI ❌
-Final Dockerization ⏳
+Final Dockerization ⏳ (backend + frontend containers)
 ```
+
+---
+
+# ⚠️ Known Limitations
+
+- `registeredBy` / `recordedBy` are sent by the client instead of derived from the JWT.
+- Audit log `previousValue` is not populated.
+- Backend and frontend are not containerized yet.
+
+# 🚀 Future Improvements
+
+- Derive `registeredBy`/`recordedBy` from the authenticated JWT.
+- Full Docker Compose setup covering backend + frontend.
+- Frontend automated tests.
 
 ---
 
@@ -1284,31 +1552,5 @@ Then follow the Docker and application startup instructions described above.
 
 Developed as part of the implementation project for the EIA racing system assignment.
 
-Team members should add their names here:
-
-```text
 - Miguel Ángel Fonseca Restrepo
 - Natalia Mejía Devia
-```
-
----
-
-# 📄 Academic Project
-
-This repository was developed for academic purposes as part of a software implementation assignment.
-
-The objective is to demonstrate:
-
-- REST API design
-- Layered backend architecture
-- Business rule implementation
-- Relational persistence
-- JPA/Hibernate usage
-- Docker integration
-- Validation
-- Exception handling
-- Race lifecycle management
-- Results and standings calculation
-- Authentication and authorization
-- Automated testing
-- GUI/API integration

@@ -1,0 +1,67 @@
+<div class="login-screen">
+  <div class="scene">
+    <div class="sun"></div>
+    <div class="monolith"></div>
+    <div class="dune dune-1"></div>
+    <div class="dune dune-2"></div>
+    <div class="horizon"></div>
+  </div>
+
+  <div class="login-panel">
+    <div class="brand">
+      <span class="brand-kicker">Universidad EIA — Implementación e Integración de Software</span>
+      <h1>The Great EIA<br />Camel vs. Dwarf<br />Racing System</h1>
+    </div>
+
+    <form class="card login-card" [formGroup]="form" (ngSubmit)="submit()">
+      <h2>Iniciar sesión</h2>
+
+      @if (errorMessage()) {
+        <div class="alert alert-danger">{{ errorMessage() }}</div>
+      }
+
+      <div class="field">
+        <label for="username">Usuario</label>
+        <input
+          id="username"
+          type="text"
+          formControlName="username"
+          [class.invalid]="form.get('username')!.invalid && form.get('username')!.touched"
+          autocomplete="username"
+        />
+        @if (form.get('username')!.invalid && form.get('username')!.touched) {
+          <span class="error">Ingresa tu usuario.</span>
+        }
+      </div>
+
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <input
+          id="password"
+          type="password"
+          formControlName="password"
+          [class.invalid]="form.get('password')!.invalid && form.get('password')!.touched"
+          autocomplete="current-password"
+        />
+        @if (form.get('password')!.invalid && form.get('password')!.touched) {
+          <span class="error">Ingresa tu contraseña.</span>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary login-submit" [disabled]="loading()">
+        @if (loading()) {
+          Ingresando…
+        } @else {
+          Entrar
+        }
+      </button>
+
+      <div class="demo-users">
+        <span class="text-muted">Usuarios de prueba:</span>
+        <button type="button" class="chip" (click)="fillDemo('admin', 'Admin123!')">admin</button>
+        <button type="button" class="chip" (click)="fillDemo('organizer', 'Organizer123!')">organizer</button>
+        <button type="button" class="chip" (click)="fillDemo('viewer', 'Viewer123!')">viewer</button>
+      </div>
+    </form>
+  </div>
+</div>

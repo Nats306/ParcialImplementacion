@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -19,7 +20,14 @@ import java.util.List;
 
 @Getter
 @Entity
-@Table(name = "teams")
+@Table(
+        name = "teams",
+        indexes = {
+                // name ya tiene índice por la unique constraint; este es
+                // para filtrar por estado (ej. listar solo equipos ACTIVE).
+                @Index(name = "idx_team_status", columnList = "status")
+        }
+)
 public class Team {
 
     @Id

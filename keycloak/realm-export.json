@@ -1,0 +1,117 @@
+{
+  "realm": "camel-racing",
+  "enabled": true,
+  "sslRequired": "none",
+
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 3600,
+
+  "roles": {
+    "realm": [
+      {
+        "name": "ADMINISTRATOR",
+        "description": "Manage users, competitors, teams, races, registrations, results and audit records."
+      },
+      {
+        "name": "RACE_ORGANIZER",
+        "description": "Manage races, registrations and results; view competitors and teams."
+      },
+      {
+        "name": "VIEWER",
+        "description": "Read public information, schedules, results and standings only."
+      }
+    ]
+  },
+
+  "clients": [
+    {
+      "clientId": "camel-racing-app",
+      "name": "Camel vs Dwarf Racing (Swagger, web client)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:5173/*",
+        "http://localhost:4200/*",
+        "http://localhost:3000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080",
+        "http://localhost:5173",
+        "http://localhost:4200",
+        "http://localhost:3000",
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "profile",
+        "roles",
+        "email"
+      ]
+    }
+  ],
+
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Race",
+      "lastName": "Administrator",
+      "email": "admin@camelracing.eia.test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMINISTRATOR"
+      ]
+    },
+    {
+      "username": "organizer",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Race",
+      "lastName": "Organizer",
+      "email": "organizer@camelracing.eia.test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Organizer123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "RACE_ORGANIZER"
+      ]
+    },
+    {
+      "username": "viewer",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Race",
+      "lastName": "Viewer",
+      "email": "viewer@camelracing.eia.test",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Viewer123!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "VIEWER"
+      ]
+    }
+  ]
+}

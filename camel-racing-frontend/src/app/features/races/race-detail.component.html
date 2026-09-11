@@ -1,0 +1,205 @@
+@if (loading()) {
+  <p class="empty-state">Cargando…</p>
+} @else if (race()) {
+  @if (race(); as r) {
+  <div class="page-header">
+    <div>
+      <a routerLink="/races" class="text-muted back-link">← Carreras</a>
+      <h1>{{ r.name }}</h1>
+      <p>
+        {{ formatDate(r.scheduledDateTime) }} · {{ r.startLocation }} → {{ r.finishLocation }} ·
+        {{ r.distanceMeters }} m
+      </p>
+    </div>
+    <div class="header-actions" *appHasRole="['ADMINISTRATOR', 'RACE_ORGANIZER']">
+      <button class="btn btn-ghost" (click)="showEditForm.set(true)">Editar</button>
+    </div>
+  </div>
+
+  @if (errorMessage()) {
+    <div class="alert alert-danger">{{ errorMessage() }}</div>
+  }
+
+  <div class="card status-card">
+    <div class="status-row">
+      <span class="text-muted">Estado actual:</span>
+      <app-status-badge [status]="r.raceStatus" />
+    </div>
+    @if (availableTransitions().length > 0) {
+      <div class="transitions" *appHasRole="['ADMINISTRATOR', 'RACE_ORGANIZER']">
+        <span class="text-muted">Cambiar a:</span>
+        @for (t of availableTransitions(); track t) {
+          <button class="btn btn-ghost btn-sm" [disabled]="changingStatus()" (click)="changeStatus(t)">
+            <app-status-badge [status]="t" />
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="card section-card">
+    <div class="section-header">
+      <h2>Inscripciones ({{ registrations().length }})</h2>
+    </div>
+
+    @if (registrations().length === 0) {
+      <p class="empty-state">Todavía no hay inscripciones.</p>
+    } @else {
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Pos.</th>
+            <th>Competidor / Equipo</th>
+            <th>Estado</th>
+            <th>Inscrito por</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (reg of registrations(); track reg.id) {
+            <tr>
+              <td>{{ reg.startingPosition }}</td>
+              <td>{{ reg.competitorName || reg.teamName }}</td>
+              <td><app-status-badge [status]="reg.status" /></td>
+              <td class="text-muted">{{ reg.registeredBy }}</td>
+              <td class="row-actions" *appHasRole="['ADMINISTRATOR', 'RACE_ORGANIZER']">
+                @if (reg.status === 'PENDING') {
+                  <button class="btn btn-primary btn-sm" (click)="approve(reg)">Aprobar</button>
+                  <button class="btn btn-danger btn-sm" (click)="reject(reg)">Rechazar</button>
+                } @else if (reg.status === 'APPROVED') {
+                  <button class="btn btn-ghost btn-sm" (click)="cancelRegistration(reg)">Cancelar</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      </div>
+    }
+
+    <div class="add-row" *appHasRole="['ADMINISTRATOR', 'RACE_ORGANIZER']">
+      <select [ngModel]="newRegistrationCompetitorId()" (ngModelChange)="newRegistrationCompetitorId.set($event)">
+        <option value="">Elegir competidor…</option>
+        @for (c of competitors(); track c.id) {
+          <option [value]="c.id">{{ c.name }} ({{ c.competitorType }})</option>
+        }
+      </select>
+      <input
+        type="number"
+        min="1"
+        [ngModel]="newRegistrationPosition()"
+        (ngModelChange)="newRegistrationPosition.set($event)"
+        placeholder="Posición de salida"
+      />
+      <button
+        class="btn btn-primary btn-sm"
+        [disabled]="!newRegistrationCompetitorId() || registering()"
+        (click)="registerCompetitor()"
+      >
+        Inscribir
+      </button>
+    </div>
+  </div>
+
+  <div class="card section-card">
+    <div class="section-header">
+      <h2>Resultados ({{ results().length }})</h2>
+    </div>
+
+    @if (results().length === 0) {
+      <p class="empty-state">Todavía no hay resultados registrados.</p>
+    } @else {
+      <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Pos. final</th>
+            <th>Competidor / Equipo</th>
+            <th>Estado</th>
+            <th>Tiempo</th>
+            <th>Puntos</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (res of results(); track res.id) {
+            <tr>
+              <td>{{ res.finalPosition ?? '—' }}</td>
+              <td>{{ res.competitorName || res.teamName }}</td>
+              <td><app-status-badge [status]="res.resultStatus" /></td>
+              <td>{{ formatTime(res.totalTimeMillis) }}</td>
+              <td>{{ res.points }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      </div>
+    }
+
+    @if (approvedWithoutResult().length > 0) {
+      <div class="pending-results" *appHasRole="['ADMINISTRATOR', 'RACE_ORGANIZER']">
+        <span class="text-muted">Registrar resultado para:</span>
+        <div class="pending-chips">
+          @for (reg of approvedWithoutResult(); track reg.id) {
+            <button class="chip" (click)="openResultForm(reg.id)">
+              {{ reg.competitorName || reg.teamName }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+  }
+}
+
+@if (showEditForm() && race()) {
+  <div class="modal-backdrop" (click)="closeEditForm()">
+    <div class="modal-panel card" (click)="$event.stopPropagation()">
+      <app-race-form [race]="race()" (saved)="onRaceSaved()" (cancelled)="closeEditForm()" />
+    </div>
+  </div>
+}
+
+@if (resultForRegistrationId() !== null) {
+  <div class="modal-backdrop" (click)="closeResultForm()">
+    <div class="modal-panel card" (click)="$event.stopPropagation()">
+      <h2>Registrar resultado</h2>
+      <div class="form-grid">
+        <div class="field">
+          <label>Estado</label>
+          <select [ngModel]="resultStatus()" (ngModelChange)="resultStatus.set($event)">
+            @for (s of resultStatuses; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Posición final</label>
+          <input type="number" min="1" [ngModel]="resultFinalPosition()" (ngModelChange)="resultFinalPosition.set($event)" />
+        </div>
+        <div class="field">
+          <label>Tiempo — minutos</label>
+          <input type="number" min="0" [ngModel]="resultMinutes()" (ngModelChange)="resultMinutes.set($event)" />
+        </div>
+        <div class="field">
+          <label>Tiempo — segundos</label>
+          <input type="number" min="0" max="59" [ngModel]="resultSeconds()" (ngModelChange)="resultSeconds.set($event)" />
+        </div>
+        <div class="field">
+          <label>Penalización (segundos)</label>
+          <input type="number" min="0" [ngModel]="resultPenaltySeconds()" (ngModelChange)="resultPenaltySeconds.set($event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Notas</label>
+        <textarea [ngModel]="resultNotes()" (ngModelChange)="resultNotes.set($event)"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" (click)="closeResultForm()">Cancelar</button>
+        <button type="button" class="btn btn-primary" [disabled]="recordingResult()" (click)="submitResult()">
+          {{ recordingResult() ? 'Guardando…' : 'Guardar resultado' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -8,7 +8,18 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "competitors")
+@Table(
+        name = "competitors",
+        indexes = {
+                // nickname y su unique constraint ya generan índice solos;
+                // estos son para las consultas de filtro/listado y para el
+                // JOIN hacia Team (una FK no genera índice automático en
+                // Postgres, a diferencia de la PK o una unique constraint).
+                @Index(name = "idx_competitor_type", columnList = "competitor_type"),
+                @Index(name = "idx_competitor_status", columnList = "current_status"),
+                @Index(name = "idx_competitor_team", columnList = "team_id")
+        }
+)
 @Builder
 @Getter
 @Setter

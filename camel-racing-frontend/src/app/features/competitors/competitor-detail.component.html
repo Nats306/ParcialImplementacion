@@ -1,0 +1,90 @@
+@if (loading()) {
+  <p class="empty-state">Cargando…</p>
+} @else if (notFound()) {
+  <div class="card empty-state">
+    <p>No se encontró ese competidor.</p>
+    <a routerLink="/competitors" class="btn btn-ghost">← Volver a competidores</a>
+  </div>
+} @else if (competitor()) {
+  @if (competitor(); as c) {
+  <div class="page-header">
+    <div>
+      <a routerLink="/competitors" class="text-muted back-link">← Competidores</a>
+      <h1>{{ c.name }}</h1>
+      <p>
+        "{{ c.nickname }}" · <app-status-badge [status]="c.competitorType" /> · {{ c.country }}
+      </p>
+    </div>
+    <div class="header-actions" *appHasRole="['ADMINISTRATOR']">
+      <button class="btn btn-ghost" (click)="showEditForm.set(true)">Editar</button>
+      <button class="btn btn-danger" (click)="remove()">Eliminar</button>
+    </div>
+  </div>
+
+  <div class="card status-card">
+    <div class="status-row">
+      <span class="text-muted">Estado actual:</span>
+      <app-status-badge [status]="c.currentStatus" />
+      <select
+        class="inline-status"
+        *appHasRole="['ADMINISTRATOR']"
+        [ngModel]="c.currentStatus"
+        (ngModelChange)="changeStatus($event)"
+      >
+        @for (s of statuses; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="card stat-mini">
+      <div class="stat-value">{{ c.victories }}</div>
+      <div class="stat-label">Victorias</div>
+    </div>
+    <div class="card stat-mini">
+      <div class="stat-value">{{ c.defeats }}</div>
+      <div class="stat-label">Derrotas</div>
+    </div>
+    <div class="card stat-mini">
+      <div class="stat-value">{{ c.completedRaces }}</div>
+      <div class="stat-label">Carreras completadas</div>
+    </div>
+  </div>
+
+  <div class="card section-card">
+    <h2>Datos del competidor</h2>
+    <div class="info-grid">
+      <div>
+        <span class="text-muted">Edad</span>
+        <div>{{ c.age }} años</div>
+      </div>
+      <div>
+        <span class="text-muted">Peso</span>
+        <div>{{ c.weight }} kg</div>
+      </div>
+      <div>
+        <span class="text-muted">Altura</span>
+        <div>{{ c.height }} m</div>
+      </div>
+      <div>
+        <span class="text-muted">País</span>
+        <div>{{ c.country }}</div>
+      </div>
+      <div>
+        <span class="text-muted">Fecha de registro</span>
+        <div>{{ c.registrationDate | date: 'medium' }}</div>
+      </div>
+    </div>
+  </div>
+  }
+}
+
+@if (showEditForm() && competitor()) {
+  <div class="modal-backdrop" (click)="closeEditForm()">
+    <div class="modal-panel card" (click)="$event.stopPropagation()">
+      <app-competitor-form [competitor]="competitor()" (saved)="onSaved()" (cancelled)="closeEditForm()" />
+    </div>
+  </div>
+}

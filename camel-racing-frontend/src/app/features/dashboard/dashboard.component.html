@@ -1,0 +1,82 @@
+<div class="page-header">
+  <div>
+    <h1>Hola, {{ profile()?.fullName || profile()?.username }} 👋</h1>
+    <p>Panorama general de la liga de carreras.</p>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <a routerLink="/competitors" class="stat-card card">
+    <span class="stat-icon">🐫</span>
+    <div>
+      <div class="stat-value">{{ loading() ? '—' : activeCompetitorCount() }}</div>
+      <div class="stat-label">Competidores activos</div>
+    </div>
+  </a>
+  <a routerLink="/teams" class="stat-card card">
+    <span class="stat-icon">🛡️</span>
+    <div>
+      <div class="stat-value">{{ loading() ? '—' : teamCount() }}</div>
+      <div class="stat-label">Equipos</div>
+    </div>
+  </a>
+  <a routerLink="/standings" class="stat-card card">
+    <span class="stat-icon">🏆</span>
+    <div>
+      <div class="stat-value">—</div>
+      <div class="stat-label">Ver clasificación completa</div>
+    </div>
+  </a>
+</div>
+
+<div class="dashboard-panels">
+  <div class="card panel">
+    <div class="panel-header">
+      <h2>Próximas carreras</h2>
+      <a routerLink="/races" class="text-muted">Ver todas →</a>
+    </div>
+
+    @if (!loading() && upcomingRaces().length === 0) {
+      <p class="empty-state">No hay carreras abiertas a inscripción por el momento.</p>
+    }
+
+    @if (upcomingRaces().length > 0) {
+      <ul class="panel-list">
+        @for (race of upcomingRaces(); track race.id) {
+          <li [routerLink]="['/races', race.id]" class="clickable-row">
+            <div>
+              <strong>{{ race.name }}</strong>
+              <div class="text-muted">{{ race.startLocation }} → {{ race.finishLocation }}</div>
+            </div>
+            <div class="panel-list-meta">{{ race.scheduledDateTime | date: 'd MMM, HH:mm' }}</div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="card panel">
+    <div class="panel-header">
+      <h2>Resultados recientes</h2>
+      <a routerLink="/standings" class="text-muted">Ver clasificación →</a>
+    </div>
+
+    @if (!loading() && recentResults().length === 0) {
+      <p class="empty-state">Todavía no hay resultados oficiales registrados.</p>
+    }
+
+    @if (recentResults().length > 0) {
+      <ul class="panel-list">
+        @for (result of recentResults(); track result.id) {
+          <li [routerLink]="['/races', result.raceId]" class="clickable-row">
+            <div>
+              <strong>{{ result.competitorName || result.teamName }}</strong>
+              <div class="text-muted">{{ result.raceName }} · puesto {{ result.finalPosition }}</div>
+            </div>
+            <div class="panel-list-meta">{{ result.points }} pts</div>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>
